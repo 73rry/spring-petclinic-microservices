@@ -17,25 +17,25 @@ spring:
             methods: POST
       routes:
         - id: vets-service
-          uri: lb://vets-service
+          uri: lb://${VETS_SERVICE_HOST:vets-service}
           predicates:
             - Path=/api/vet/**
           filters:
             - StripPrefix=2
         - id: visits-service
-          uri: lb://visits-service
+          uri: lb://${VISITS_SERVICE_HOST:visits-service}
           predicates:
             - Path=/api/visit/**
           filters:
             - StripPrefix=2
         - id: customers-service
-          uri: lb://customers-service
+          uri: lb://${CUSTOMERS_SERVICE_HOST:customers-service}
           predicates:
             - Path=/api/customer/**
           filters:
             - StripPrefix=2
         - id: genai-service
-          uri: lb://genai-service
+          uri: lb://${GENAI_SERVICE_HOST:genai-service}
           predicates:
             - Path=/api/genai/**
           filters:
