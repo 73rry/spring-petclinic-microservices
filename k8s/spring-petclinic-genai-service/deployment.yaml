@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: genai-server-deployment
+  name: genai-service-deployment
   namespace: spring-petclinic
   labels:
-    app: genai-server
+    app: genai-service
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: genai-server
+      app: genai-service
   template:
     metadata:
       labels:
-        app: genai-server
+        app: genai-service
     spec:
       containers:
-        - name: genai-server
+        - name: genai-service
           image: terrytantan/spring-petclinic-genai-service:latest
           ports:
             - containerPort: 8084

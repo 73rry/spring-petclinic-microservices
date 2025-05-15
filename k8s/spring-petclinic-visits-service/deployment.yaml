@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: visits-server-deployment
+  name: visits-service-deployment
   namespace: spring-petclinic
   labels:
-    app: visits-server
+    app: visits-service
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: visits-server
+      app: visits-service
   template:
     metadata:
       labels:
-        app: visits-server
+        app: visits-service
     spec:
       containers:
-        - name: visits-server
+        - name: visits-service
           image: terrytantan/spring-petclinic-visits-service:latest
           ports:
             - containerPort: 8082

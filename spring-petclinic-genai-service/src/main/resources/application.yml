@@ -49,4 +49,4 @@ spring:
   config:
     activate:
       on-profile: k8s
-    import: configserver:http://config-server-service:8888
+    import: configserver:http://config-server:8888

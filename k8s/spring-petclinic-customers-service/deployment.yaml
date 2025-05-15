@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: customers-server-deployment
+  name: customers-service-deployment
   namespace: spring-petclinic
   labels:
-    app: customers-server
+    app: customers-service
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: customers-server
+      app: customers-service
   template:
     metadata:
       labels:
-        app: customers-server
+        app: customers-service
     spec:
       containers:
-        - name: customers-server
+        - name: customers-service
           image: terrytantan/spring-petclinic-customers-service:latest
           ports:
             - containerPort: 8081
