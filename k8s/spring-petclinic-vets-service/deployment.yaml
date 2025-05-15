@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vets-server-deployment
+  namespace: spring-petclinic
+  labels:
+    app: vets-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vets-server
+  template:
+    metadata:
+      labels:
+        app: vets-server
+    spec:
+      containers:
+        - name: vets-server
+          image: terrytantan/spring-petclinic-vets-service:latest
+          ports:
+            - containerPort: 8083
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: k8s

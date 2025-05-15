@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: visits-server-deployment
+  namespace: spring-petclinic
+  labels:
+    app: visits-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: visits-server
+  template:
+    metadata:
+      labels:
+        app: visits-server
+    spec:
+      containers:
+        - name: visits-server
+          image: terrytantan/spring-petclinic-visits-service:latest
+          ports:
+            - containerPort: 8082
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: k8s
+            

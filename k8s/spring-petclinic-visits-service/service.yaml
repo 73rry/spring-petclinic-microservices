@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: visits-server-service
+  namespace: spring-petclinic
+  labels:
+    app: visits-server
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8082
+      targetPort: 8082
+  selector:
+    app: visits-server
