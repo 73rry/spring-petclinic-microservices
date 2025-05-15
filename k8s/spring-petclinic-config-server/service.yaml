@@ -6,7 +6,7 @@ metadata:
   labels:
     app: config-server
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   ports:
     - name: http
       port: 8888
