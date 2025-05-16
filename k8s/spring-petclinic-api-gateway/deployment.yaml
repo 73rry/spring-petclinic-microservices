@@ -23,11 +23,3 @@ spec:
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: k8s
-            - name: VETS_SERVICE_HOST
-              value: vets-server-service
-            - name: CUSTOMERS_SERVICE_HOST
-              value: customers-server-service
-            - name: VISITS_SERVICE_HOST
-              value: visits-server-service
-            - name: GENAI_SERVICE_HOST
-              value: genai-server-service
