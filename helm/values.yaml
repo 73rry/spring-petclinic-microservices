@@ -81,6 +81,16 @@ servers:
       image:
         name: spring-petclinic-visits-service
         tag: latest
+  - openzipkin:
+      replicas: 1
+      appName: openzipkin
+      deploymentName: openzipkin-deployment
+      serviceName: openzipkin
+      containerName: openzipkin
+      port: 9411
+      image:
+        name: openzipkin/zipkin
+        tag: latest
 ingress:
   name: spring-petclinic-ingress
   annotations:
@@ -112,3 +122,9 @@ ingress:
         service:
           name: config-server
           port: 8888
+    - openzipkin:
+        host: openzipkin.spring-petclinic.com
+        path: /
+        service:
+          name: openzipkin
+          port: 9411
