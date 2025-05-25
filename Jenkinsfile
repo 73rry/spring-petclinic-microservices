@@ -19,7 +19,7 @@ pipeline {
 
                     // Build Docker image using BuildKit and buildx (without symlink)
                     sh """
-                        ./mvnw clean install -Dmaven.test.skip -P buildDocker -Ddocker.image.prefix=${REPOSITORY_PREFIX} -Dcontainer.build.extraarg="--push"
+                        ./mvn clean install -rf :spring-petclinic-admin-server
                     """
                 }
             }
