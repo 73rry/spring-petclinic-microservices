@@ -2,4 +2,7 @@
 
 export REPOSITORY_PREFIX="terrytantan"
 export SPRING_PROFILES_ACTIVE="k8s"
-./mvnw clean install -Dmaven.test.skip -P buildDocker -Ddocker.image.prefix=${REPOSITORY_PREFIX} -Dcontainer.build.extraarg="--push"
+export VERSION=1278912
+mvn clean install -Dmaven.test.skip -P buildDocker -Ddocker.image.prefix=${REPOSITORY_PREFIX} 
+./scripts/tagImages.sh
+./scripts/pushImages.sh
