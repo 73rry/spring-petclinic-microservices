@@ -14,19 +14,21 @@ pipeline {
             steps {
                 script {
                     // Ensure Docker Buildx is installed (only for environments where it's required)
-                    if (!fileExists('/usr/local/bin/docker-buildx')) {
+                    def buildxPath = '/tmp/docker-buildx'  // Using /tmp instead of /usr/local/bin
+                    if (!fileExists(buildxPath)) {
                         echo "Installing Docker Buildx"
-                        sh '''
-                            curl -L https://github.com/docker/buildx/releases/download/v0.8.0/buildx-v0.8.0.linux-amd64 -o /usr/local/bin/docker-buildx
-                            chmod +x /usr/local/bin/docker-buildx
-                        '''
+                        sh """
+                            curl -L https://github.com/docker/buildx/releases/download/v0.8.0/buildx-v0.8.0.linux-amd64 -o ${buildxPath}
+                            chmod +x ${buildxPath}
+                            ln -s ${buildxPath} /usr/local/bin/docker-buildx  # Optionally create symlink
+                        """
                     } else {
                         echo "Docker Buildx is already installed."
                     }
                 }
             }
         }
-        
+
         stage('Push') {
             steps {
                 script {
