@@ -19,7 +19,7 @@ pipeline {
 
                     // Build Docker image using BuildKit and buildx (without symlink)
                     sh """
-                        ./mvn clean install -rf :spring-petclinic-admin-server
+                        mvn clean install -rf :spring-petclinic-admin-server
                     """
                 }
             }
