@@ -12,7 +12,7 @@ pipeline {
             steps {
                 script {
                     // Get the commit ID of the latest commit
-                    def commitId = sh(script: 'git log -1 --pretty=%H', returnStdout: true).trim()
+                    def commitId = sh(script: 'git log -1 --pretty=%H', returnStdout: true).trim() 
 
                     // Output the commit ID and branch name
                     echo "The latest commit ID is: ${commitId}"
