@@ -27,7 +27,7 @@ pipeline {
                     
                     // Build Docker image using BuildKit (buildx)
                     sh """
-                        ./mvnw clean install -Dmaven.test.skip -P buildDocker -Ddocker.image.prefix=${REPOSITORY_PREFIX} -Dcontainer.build.extraarg="--push"
+                        ./mvnw clean install -Dmaven.test.skip -P buildDocker -Ddocker.image.prefix=${REPOSITORY_PREFIX} -Dcontainer.build.extraarg="--push" -X
                     """
                 }
             }
