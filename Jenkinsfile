@@ -3,9 +3,10 @@ pipeline {
 
     environment {
         GITHUB_TOKEN = credentials('github-PAT')  // GitHub Personal Access Token
-        REPOSITORY_PREFIX="terrytantan"
-        SPRING_PROFILES_ACTIVE="k8s"
-        
+        REPOSITORY_PREFIX = "terrytantan"
+        SPRING_PROFILES_ACTIVE = "k8s"
+        DOCKER_BUILDKIT = "1"  // Enable Docker BuildKit
+        DOCKER_CLI_EXPERIMENTAL = "enabled"  // Enable experimental Docker features
     }
 
     stages {
@@ -17,10 +18,13 @@ pipeline {
 
                     // Output the commit ID and branch name
                     echo "The latest commit ID is: ${commitId}"
-                    sh """
-                        ./mvnw clean install -Dmaven.test.skip -P buildDocker -Ddocker.image.prefix=${REPOSITORY_PREFIX} -Dcontainer.build.extraarg="--push"
-                    """ 
                     
+                    // Build Docker image using BuildKit (buildx)
+                    sh """
+                        export DOCKER_BUILDKIT=1
+                        export DOCKER_CLI_EXPERIMENTAL=enabled
+                        ./mvnw clean install -Dmaven.test.skip -P buildDocker -Ddocker.image.prefix=${REPOSITORY_PREFIX} -Dcontainer.build.extraarg="--push"
+                    """
                 }
             }
         }
