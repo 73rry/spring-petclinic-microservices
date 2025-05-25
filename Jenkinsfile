@@ -5,29 +5,9 @@ pipeline {
         GITHUB_TOKEN = credentials('github-PAT')  // GitHub Personal Access Token
         REPOSITORY_PREFIX = "terrytantan"
         SPRING_PROFILES_ACTIVE = "k8s"
-        DOCKER_BUILDKIT = "1"  // Enable Docker BuildKit
-        DOCKER_CLI_EXPERIMENTAL = "enabled"  // Enable experimental Docker features
     }
 
     stages {
-        stage('Install Docker Buildx') {
-            steps {
-                script {
-                    // Ensure Docker Buildx is installed (only for environments where it's required)
-                    def buildxPath = '/tmp/docker-buildx'  // Using /tmp instead of /usr/local/bin
-                    if (!fileExists(buildxPath)) {
-                        echo "Installing Docker Buildx"
-                        sh """
-                            curl -L https://github.com/docker/buildx/releases/download/v0.8.0/buildx-v0.8.0.linux-amd64 -o ${buildxPath}
-                            chmod +x ${buildxPath}
-                        """
-                    } else {
-                        echo "Docker Buildx is already installed."
-                    }
-                }
-            }
-        }
-
         stage('Push') {
             steps {
                 script {
@@ -39,8 +19,6 @@ pipeline {
 
                     // Build Docker image using BuildKit and buildx (without symlink)
                     sh """
-                        export DOCKER_BUILDKIT=1
-                        export DOCKER_CLI_EXPERIMENTAL=enabled
                         ./mvnw clean install -Dmaven.test.skip -P buildDocker -Ddocker.image.prefix=${REPOSITORY_PREFIX} -Dcontainer.build.extraarg="--push"
                     """
                 }
