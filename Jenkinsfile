@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent { label  'jenkins-agent' }
 
     environment {
         GITHUB_TOKEN = credentials('github-PAT')  // GitHub Personal Access Token
