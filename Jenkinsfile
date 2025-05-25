@@ -5,6 +5,7 @@ pipeline {
         GITHUB_TOKEN = credentials('github-PAT')  // GitHub Personal Access Token
         REPOSITORY_PREFIX="terrytantan"
         SPRING_PROFILES_ACTIVE="k8s"
+        
     }
 
     stages {
