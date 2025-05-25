@@ -10,6 +10,23 @@ pipeline {
     }
 
     stages {
+        stage('Install Docker Buildx') {
+            steps {
+                script {
+                    // Ensure Docker Buildx is installed (only for environments where it's required)
+                    if (!fileExists('/usr/local/bin/docker-buildx')) {
+                        echo "Installing Docker Buildx"
+                        sh '''
+                            curl -L https://github.com/docker/buildx/releases/download/v0.8.0/buildx-v0.8.0.linux-amd64 -o /usr/local/bin/docker-buildx
+                            chmod +x /usr/local/bin/docker-buildx
+                        '''
+                    } else {
+                        echo "Docker Buildx is already installed."
+                    }
+                }
+            }
+        }
+        
         stage('Push') {
             steps {
                 script {
@@ -18,8 +35,8 @@ pipeline {
 
                     // Output the commit ID and branch name
                     echo "The latest commit ID is: ${commitId}"
-                    
-                    // Build Docker image using BuildKit (buildx)
+
+                    // Build Docker image using BuildKit and buildx
                     sh """
                         export DOCKER_BUILDKIT=1
                         export DOCKER_CLI_EXPERIMENTAL=enabled
