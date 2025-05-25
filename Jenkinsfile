@@ -20,7 +20,6 @@ pipeline {
                         sh """
                             curl -L https://github.com/docker/buildx/releases/download/v0.8.0/buildx-v0.8.0.linux-amd64 -o ${buildxPath}
                             chmod +x ${buildxPath}
-                            ln -s ${buildxPath} /usr/local/bin/docker-buildx  # Optionally create symlink
                         """
                     } else {
                         echo "Docker Buildx is already installed."
@@ -38,7 +37,7 @@ pipeline {
                     // Output the commit ID and branch name
                     echo "The latest commit ID is: ${commitId}"
 
-                    // Build Docker image using BuildKit and buildx
+                    // Build Docker image using BuildKit and buildx (without symlink)
                     sh """
                         export DOCKER_BUILDKIT=1
                         export DOCKER_CLI_EXPERIMENTAL=enabled
