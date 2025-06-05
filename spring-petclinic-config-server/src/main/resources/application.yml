@@ -10,3 +10,12 @@ spring:
         native:
           searchLocations: file:///${GIT_REPO}
 
+---
+spring:
+  config:
+    activate:
+      on-profile: k8s
+  cloud:
+    config:
+      server:
+        prefix: /config
