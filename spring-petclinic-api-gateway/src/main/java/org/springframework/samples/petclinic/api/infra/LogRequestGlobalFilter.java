@@ -25,9 +25,8 @@ public class LogRequestGlobalFilter implements GlobalFilter, Ordered {
         log.info("⇢ {} {}", exchange.getRequest().getMethod(), exchange.getRequest().getURI());
         // Tiếp tục filter chain và log khi response hoàn tất
         return chain.filter(exchange)
-                .doOnSuccessOrError((r, ex) -> {
-                    log.info("⇠ {} {}", exchange.getResponse().getStatusCode(), exchange.getRequest().getURI());
-                });
+                .doOnTerminate(() ->
+                        log.info("⇠ {} {}", exchange.getResponse().getStatusCode(), exchange.getRequest().getURI()));
     }
 
     // Đặt ngay trước WRITE_RESPONSE_FILTER để chắc chắn log sau khi response sinh xong
