@@ -19,25 +19,14 @@ public class LogRequestGlobalFilter implements GlobalFilter, Ordered {
 
     private static final Logger log = LoggerFactory.getLogger(LogRequestGlobalFilter.class);
 
-    private final io.micrometer.tracing.Tracer tracer;
-
-    public LogRequestGlobalFilter(io.micrometer.tracing.Tracer tracer) {
-        this.tracer = tracer;
-    }
-
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        // Bắt đầu span (nếu đã có span hiện tại thì tạo span con)
-        io.micrometer.tracing.Span newSpan = tracer.nextSpan().name(exchange.getRequest().getMethod() + " " + exchange.getRequest().getPath())
-                .start();
-        try (io.micrometer.tracing.SpanInScope ws = this.tracer.withSpan(newSpan)) {
-            log.info("⇢ {} {}", exchange.getRequest().getMethod(), exchange.getRequest().getURI());
-            return chain.filter(exchange)
-                    .doOnTerminate(() -> {
-                        log.info("⇠ {} {}", exchange.getResponse().getStatusCode(), exchange.getRequest().getURI());
-                        newSpan.end();
-                    });
-        }
+        // Log request đầu vào
+        log.info("⇢ {} {}", exchange.getRequest().getMethod(), exchange.getRequest().getURI());
+        // Tiếp tục filter chain và log khi response hoàn tất
+        return chain.filter(exchange)
+                .doOnTerminate(() ->
+                        log.info("⇠ {} {}", exchange.getResponse().getStatusCode(), exchange.getRequest().getURI()));
     }
 
     // Đặt ngay trước WRITE_RESPONSE_FILTER để chắc chắn log sau khi response sinh xong
