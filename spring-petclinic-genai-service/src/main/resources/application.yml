@@ -28,6 +28,13 @@ spring:
             temperature: 0.7
             model: gpt-4o-mini
 
+management:
+  tracing:
+    sampling:
+      probability: 1
+  zipkin:
+    tracing:
+      endpoint: http://tracing-server:9411/api/v2/spans
 
 logging:
   level:
@@ -37,6 +44,9 @@ logging:
           chat:
             client:
               advisor: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} : %msg traceId=%X{traceId:-} spanId=%X{spanId:-}%n"
+
 ---
 spring:
   config:
