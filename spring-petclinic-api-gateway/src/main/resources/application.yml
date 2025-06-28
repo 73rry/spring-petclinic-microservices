@@ -8,7 +8,7 @@ management:
 
 logging:
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} : %msg traceId=%X{traceId:-} spanId=%X{spanId:-}%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} : %msg traceId=%X{traceId:-N/A} spanId=%X{spanId:-N/A}%n"
 
 spring:
   application:
