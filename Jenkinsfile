@@ -44,7 +44,6 @@ pipeline {
 
                     echo "Last Commit ID: ${env.GIT_COMMIT}"
                     echo "Affected services: ${affectedServices}"
-                    sh "docker system prune -a -f"
                 }
             }
         }
