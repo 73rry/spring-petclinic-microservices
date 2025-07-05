@@ -1,3 +1,4 @@
+def servicesList = ['spring-petclinic-admin-server', 'spring-petclinic-api-gateway', 'spring-petclinic-config-server', 'spring-petclinic-customers-service', 'spring-petclinic-discovery-server', 'spring-petclinic-genai-service', 'spring-petclinic-vets-service', 'spring-petclinic-visits-service']
 def affectedServices = []
 
 pipeline {
@@ -12,14 +13,69 @@ pipeline {
     }
 
     stages {
-        stage('Check if PR to main') {
-            when {
-                expression { return env.CHANGE_ID && env.CHANGE_TARGET == 'main' }
-            }
+        stage('Check for Git Tag') {
             steps {
-                echo "Pull request vào main, tiếp tục kiểm tra!"
+                script {
+                    // Kiểm tra nếu build được kích hoạt bởi một Git tag
+                    if (env.GIT_TAG) {
+                        // Lấy commit ID và git tag
+                        def commitId = env.GIT_COMMIT
+                        def gitTag = env.GIT_TAG
+
+                        echo "Git Tag detected: ${gitTag}. Changing ENV to 'staging' and checking Docker images."
+
+                        // Kiểm tra nếu tất cả images `${REPOSITORY_PREFIX}/${service}-dev:${commitId}` đã tồn tại
+                        def allImagesExist = true
+                        for (service in servicesList) {
+                            echo "Checking if image ${image} exists..."
+                            def image = "${REPOSITORY_PREFIX}/${service}-${ENV}:${commitId}"
+                            
+                            // Kiểm tra image tồn tại trên Docker Hub
+                            def imageExists = sh(script: "docker pull ${image}", returnStatus: true) == 0
+                            
+                            if (!imageExists) {
+                                echo "Image ${image} does not exist, skipping this pipeline."
+                                allImagesExist = false
+                                break  // Dừng nếu có bất kỳ image nào không tồn tại
+                            }
+                        }
+
+                        // Nếu tất cả images đã tồn tại, tạo image mới và push lên Docker Hub
+                        if (allImagesExist) {
+                            echo "All images exist. Creating new images with tag ${gitTag} and pushing to DockerHub."
+                            ENV = gitTag  // Đổi ENV thành tên tag
+                            VERSION = gitTag  // Đổi VERSION thành Git tag
+
+                            // Đăng nhập vào DockerHub
+                            sh "echo ${DOCKER_HUB_CREDENTIALS_PSW} | docker login -u ${DOCKER_HUB_CREDENTIALS_USR} --password-stdin"
+
+                            // Tạo và push image mới cho từng service
+                            for (service in servicesList) {
+                                def imageDev = "${REPOSITORY_PREFIX}/${service}-dev:${commitId}"
+                                def imageStaging = "${REPOSITORY_PREFIX}/${service}-staging:${gitTag}"
+
+                                // Tạo image mới với tag 'staging'
+                                sh "docker tag ${imageDev} ${imageStaging}"
+                                echo "Pushing image ${imageStaging} to DockerHub"
+                                sh "docker push ${imageStaging}"
+                            }
+
+                            // Đăng xuất khỏi DockerHub
+                            sh "docker logout"
+
+                            // Dừng pipeline sau khi push images
+                            echo "Images pushed successfully. Stopping the pipeline."
+                            return  // Dừng pipeline sau khi hoàn tất
+                        } else {
+                            echo "Not all required images exist. Stopping pipeline."
+                            return  // Dừng pipeline nếu một trong các image không tồn tại
+                        }
+                    }
+                }
             }
         }
+        
+
 
         stage('Determine changed services') {
             steps {
