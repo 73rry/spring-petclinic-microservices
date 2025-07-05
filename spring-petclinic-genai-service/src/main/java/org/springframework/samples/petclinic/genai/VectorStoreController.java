@@ -19,6 +19,7 @@ import org.springframework.samples.petclinic.genai.dto.Vet;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
