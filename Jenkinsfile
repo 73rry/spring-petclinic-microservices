@@ -86,7 +86,6 @@ pipeline {
                         """
 
                         sh "rm docker/${service}.jar"
-                        sh "docker images"
                         echo "docker ${service} build completed."
                     }
                 }
