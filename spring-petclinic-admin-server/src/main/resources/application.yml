@@ -14,7 +14,7 @@ management:
 
 logging:
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} : %msg traceId=%X{traceId:-} spanId=%X{spanId:-}%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [${spring.application.name},%X{traceId:-},%X{spanId:-}] %-40.40logger{39} : %m%n"
 
 ---
 spring:
