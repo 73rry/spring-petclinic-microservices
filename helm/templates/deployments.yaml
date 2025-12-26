@@ -1,0 +1,46 @@
+{{- $global := .Values.global -}}
+{{- range $name, $svc := .Values.services }}
+{{- if $svc.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "petclinic.fullname" (dict "name" $name "context" $) }}
+  labels:
+    {{- include "petclinic.labels" $ | nindent 4 }}
+    app: {{ include "petclinic.name" $ }}
+    service: {{ $name }}
+spec:
+  replicas: {{ default 1 $svc.replicas }}
+  selector:
+    matchLabels:
+      app: {{ include "petclinic.name" $ }}
+      service: {{ $name }}
+  template:
+    metadata:
+      labels:
+        {{- include "petclinic.labels" $ | nindent 8 }}
+        app: {{ include "petclinic.name" $ }}
+        service: {{ $name }}
+    spec:
+      containers:
+        - name: {{ $name }}
+          {{- /* If the image already contains a registry/repo (e.g., openzipkin/zipkin), don't prepend global prefix */}}
+          {{- if contains "/" $svc.image }}
+          image: {{ printf "%s:%s" $svc.image (default "latest" $global.tag) }}
+          {{- else }}
+          image: {{ printf "%s/%s:%s" (default "springcommunity" $global.imagePrefix) $svc.image (default "latest" $global.tag) }}
+          {{- end }}
+          imagePullPolicy: {{ default "IfNotPresent" $global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ $svc.port }}
+          env:
+            {{- if $svc.env }}
+            {{- range $key, $val := $svc.env }}
+            - name: {{ $key }}
+              value: {{ $val | quote }}
+            {{- end }}
+            {{- end }}
+---
+{{- end }}
+{{- end }}
