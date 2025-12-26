@@ -197,6 +197,14 @@
                 </pluginManagement>
             </build>
         </profile>
+
+        <profile> 
+            <id>buildKubernetes</id> 
+            <properties> 
+                <docker.image.prefix>asia-southeast1-docker.pkg.dev/servicemesh-481417/service-mesh</docker.image.prefix> 
+                <container.build.extraarg>--push</container.build.extraarg> 
+            </properties> 
+        </profile>
     </profiles>
 
 </project>
