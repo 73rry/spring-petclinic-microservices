@@ -38,6 +38,10 @@ spec:
             host: {{ $fullName }}
             port:
               number: {{ $svc.port | default 80 }}
+      retries:
+        attempts: 3
+        perTryTimeout: 2s
+        retryOn: 5xx
 ---
 {{- end }}
 {{- end }}
