@@ -1,0 +1,43 @@
+{{- /*
+Generates one Istio VirtualService per enabled service in .Values.services.
+External-facing services are bound to the petclinic-gateway with domain hosts;
+non-external services are mesh-internal VirtualServices.
+*/ -}}
+{{- $gatewayName := "petclinic-gateway" -}}
+{{- $externalHostMap := dict
+  "api-gateway" "spring-petclinic.antoanso.dev"
+  "admin-server" "admin.spring-petclinic.antoanso.dev"
+  "config-server" "config.spring-petclinic.antoanso.dev"
+  "discovery-server" "discovery.spring-petclinic.antoanso.dev"
+  "grafana-server" "grafana.spring-petclinic.antoanso.dev"
+  "prometheus-server" "prometheus.spring-petclinic.antoanso.dev"
+  "tracing-server" "tracing.spring-petclinic.antoanso.dev"
+-}}
+
+{{- range $name, $svc := .Values.services }}
+{{- $host := index $externalHostMap $name }}
+{{- if and $svc.enabled $host }}
+{{- $fullName := include "petclinic.fullname" (dict "name" $name "context" $) }}
+
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ $fullName }}-external
+  labels:
+    {{- include "petclinic.labels" $ | nindent 4 }}
+    app: {{ include "petclinic.name" $ }}
+    service: {{ $name }}
+spec:
+  hosts:
+    - {{ $host }}
+  gateways:
+    - {{ $gatewayName }}
+  http:
+    - route:
+        - destination:
+            host: {{ $fullName }}
+            port:
+              number: {{ $svc.port | default 80 }}
+---
+{{- end }}
+{{- end }}

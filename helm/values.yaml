@@ -8,42 +8,36 @@ services:
     enabled: true
     image: spring-petclinic-config-server
     port: 8888
-    nodePort: 30888
     replicas: 1
 
   discovery-server:
     enabled: true
     image: spring-petclinic-discovery-server
     port: 8761
-    nodePort: 31761
     replicas: 1
 
   customers-service:
     enabled: true
     image: spring-petclinic-customers-service
     port: 8081
-    nodePort: 30081
     replicas: 1
 
   visits-service:
     enabled: true
     image: spring-petclinic-visits-service
     port: 8082
-    nodePort: 30082
     replicas: 1
 
   vets-service:
     enabled: true
     image: spring-petclinic-vets-service
     port: 8083
-    nodePort: 30083
     replicas: 1
 
   genai-service:
     enabled: true
     image: spring-petclinic-genai-service
     port: 8084
-    nodePort: 30084
     replicas: 1
     env:
       OPENAI_API_KEY: ""
@@ -54,33 +48,28 @@ services:
     enabled: true
     image: spring-petclinic-api-gateway
     port: 8080
-    nodePort: 30080
     replicas: 1
 
   admin-server:
     enabled: true
     image: spring-petclinic-admin-server
     port: 9090
-    nodePort: 30900
     replicas: 1
 
   tracing-server:
     enabled: true
     image: openzipkin/zipkin
     port: 9411
-    nodePort: 30911
     replicas: 1
 
   prometheus-server:
     enabled: true
     image: prometheus-server
     port: 9090
-    nodePort: 30910
     replicas: 1
 
   grafana-server:
     enabled: true
     image: grafana-server
     port: 3000
-    nodePort: 30300
     replicas: 1

@@ -1,0 +1,32 @@
+{{- /*
+Creates a mesh-internal VirtualService for every enabled service.
+These use gateways: mesh and route to the service ClusterIP on its configured port.
+Names are suffixed with -internal to avoid collisions with external VirtualServices.
+*/ -}}
+
+{{- range $name, $svc := .Values.services }}
+{{- if $svc.enabled }}
+{{- $fullName := include "petclinic.fullname" (dict "name" $name "context" $) }}
+
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: {{ $fullName }}-internal
+  labels:
+    {{- include "petclinic.labels" $ | nindent 4 }}
+    app: {{ include "petclinic.name" $ }}
+    service: {{ $name }}
+spec:
+  hosts:
+    - {{ $fullName }}
+  gateways:
+    - mesh
+  http:
+    - route:
+        - destination:
+            host: {{ $fullName }}
+            port:
+              number: {{ $svc.port | default 80 }}
+---
+{{- end }}
+{{- end }}

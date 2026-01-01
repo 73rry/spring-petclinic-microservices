@@ -9,7 +9,7 @@ metadata:
     app: {{ include "petclinic.name" $ }}
     service: {{ $name }}
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: {{ include "petclinic.name" $ }}
     service: {{ $name }}

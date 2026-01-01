@@ -1,0 +1,43 @@
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: petclinic-gateway
+  namespace: default
+spec:
+  selector:
+    istio: ingressgateway 
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*.spring-petclinic.antoanso.dev"
+    tls:
+      httpsRedirect: true
+  - port:
+      number: 80
+      name: http-web
+      protocol: HTTP
+    hosts:
+    - "spring-petclinic.antoanso.dev"
+    tls:
+      httpsRedirect: true
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    hosts:
+    - "*.spring-petclinic.antoanso.dev"
+    tls:
+      mode: SIMPLE
+      credentialName: petclinic-tls 
+  - port:
+      number: 443
+      name: https-web
+      protocol: HTTPS
+    hosts:
+    - "spring-petclinic.antoanso.dev"
+    tls:
+      mode: SIMPLE
+      credentialName: petclinic-tls
