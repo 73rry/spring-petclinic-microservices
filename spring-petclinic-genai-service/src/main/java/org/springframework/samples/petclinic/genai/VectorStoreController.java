@@ -29,7 +29,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Loads the veterinarians data into a vector store for the purpose of RAG functionality.
+ * Loads the veterinarians data into a vector store for the purpose of RAG
+ * functionality.
  *
  * @author Oded Shopen
  */
@@ -39,9 +40,9 @@ public class VectorStoreController {
 	private final Logger logger = LoggerFactory.getLogger(VectorStoreController.class);
 
 	private final VectorStore vectorStore;
-    private final WebClient webClient;
+	private final WebClient webClient;
 
-    public VectorStoreController(VectorStore vectorStore, WebClient.Builder webClientBuilder) {
+	public VectorStoreController(VectorStore vectorStore, WebClient.Builder webClientBuilder) {
 		this.webClient = webClientBuilder.build();
 		this.vectorStore = vectorStore;
 	}
@@ -61,17 +62,18 @@ public class VectorStoreController {
 			return;
 		}
 
-		// If vectorstore.json is deleted, the data will be loaded on startup every time.
+		// If vectorstore.json is deleted, the data will be loaded on startup every
+		// time.
 		// Warning - this can be costly in terms of credits used with the AI provider.
 		// Fetches all Vet entites and creates a document per vet
-        String vetsHostname = "http://vets-service/";
-        List<Vet> vets = webClient
-	            .get()
-	            .uri(vetsHostname + "vets")
-	            .retrieve()
-	            .bodyToMono(new ParameterizedTypeReference<List<Vet>>() {})
-	            .block();
-
+		String vetsHostname = "http://vets-service/";
+		List<Vet> vets = webClient
+				.get()
+				.uri(vetsHostname + "vets")
+				.retrieve()
+				.bodyToMono(new ParameterizedTypeReference<List<Vet>>() {
+				})
+				.block();
 
 		Resource vetsAsJson = convertListToJsonResource(vets);
 		DocumentReader reader = new JsonReader(vetsAsJson);
@@ -81,9 +83,11 @@ public class VectorStoreController {
 		this.vectorStore.add(documents);
 
 		if (vectorStore instanceof SimpleVectorStore) {
-            // java:S5443 Sonar rule: Using publicly writable directories is security-sensitive
-            FileAttribute<Set<PosixFilePermission>> attr = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------"));
-            File file = Files.createTempFile("vectorstore", ".json", attr).toFile();
+			// java:S5443 Sonar rule: Using publicly writable directories is
+			// security-sensitive
+			FileAttribute<Set<PosixFilePermission>> attr = PosixFilePermissions
+					.asFileAttribute(PosixFilePermissions.fromString("rwx------"));
+			File file = Files.createTempFile("vectorstore", ".json", attr).toFile();
 			((SimpleVectorStore) this.vectorStore).save(file);
 			logger.info("vector store contents written to {}", file.getAbsolutePath());
 		}
@@ -102,9 +106,8 @@ public class VectorStoreController {
 
 			// Create a ByteArrayResource from the byte array
 			return new ByteArrayResource(jsonBytes);
-		}
-		catch (JsonProcessingException e) {
-            logger.error("Error processing JSON in the convertListToJsonResource function", e);
+		} catch (JsonProcessingException e) {
+			logger.error("Error processing JSON in the convertListToJsonResource function", e);
 			return null;
 		}
 	}
