@@ -114,7 +114,7 @@ pipeline {
                         // Sử dụng block 'withSonarQubeEnv' để Jenkins tự động nạp Token và URL
                         withSonarQubeEnv('sonarqube') { 
                             dir(service) {
-                                sh "mvn sonar:sonar " +
+                                sh "mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.10.0.2594:sonar " +
                                 "-Dsonar.projectKey=spring-petclinic-${service} " +
                                 "-Dsonar.projectName=spring-petclinic-${service}"
                             }
