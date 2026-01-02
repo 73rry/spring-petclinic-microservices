@@ -4,6 +4,10 @@ def affectedServices = []
 pipeline {
     agent any
 
+    parameters {
+        booleanParam(name: 'BUILD_ALL_SERVICES', defaultValue: false, description: 'Build all services regardless of changes')
+    }
+
     environment {
         DOCKER_HUB_CREDENTIALS = credentials('dockerhub-PAT')
         REPOSITORY_PREFIX = "matadora04"
@@ -77,23 +81,29 @@ pipeline {
         stage('Determine changed services') {
             steps {
                 script {
-                    def changedFiles
-                    if (env.CHANGE_TARGET) {
-                        // Ensure the target branch is fetched
-                        sh "git fetch origin ${env.CHANGE_TARGET}"
-                        
-                        sh "git checkout -b target_branch FETCH_HEAD"
-                        
-                        changedFiles = sh(returnStdout: true, script: "git diff --name-only target_branch...HEAD").trim().split('\n')
-                    } else {  
-                        changedFiles = sh(returnStdout: true, script: "git diff --name-only HEAD^ HEAD").trim().split('\n')
-                    }
+                    // Check if BUILD_ALL_SERVICES parameter is true
+                    if (params.BUILD_ALL_SERVICES) {
+                        echo "BUILD_ALL_SERVICES is enabled - building all services"
+                        affectedServices = servicesList
+                    } else {
+                        def changedFiles
+                        if (env.CHANGE_TARGET) {
+                            // Ensure the target branch is fetched
+                            sh "git fetch origin ${env.CHANGE_TARGET}"
+                            
+                            sh "git checkout -b target_branch FETCH_HEAD"
+                            
+                            changedFiles = sh(returnStdout: true, script: "git diff --name-only target_branch...HEAD").trim().split('\n')
+                        } else {  
+                            changedFiles = sh(returnStdout: true, script: "git diff --name-only HEAD^ HEAD").trim().split('\n')
+                        }
 
-                    affectedServices = changedFiles.findAll { file ->
-                        file.startsWith('spring-petclinic-')
-                    }.collect { file ->
-                        return file.split('/')[0]
-                    }.unique()
+                        affectedServices = changedFiles.findAll { file ->
+                            file.startsWith('spring-petclinic-')
+                        }.collect { file ->
+                            return file.split('/')[0]
+                        }.unique()
+                    }
 
                     echo "Last Commit ID: ${env.GIT_COMMIT}"
                     echo "Affected services: ${affectedServices}"
@@ -212,9 +222,19 @@ pipeline {
                 script {
                     for (service in affectedServices) {
                         echo "Pushing docker image for ${service} ..."
+                        
+                        // Push with commit hash tag
                         sh """
                              docker push ${REPOSITORY_PREFIX}/${service}-$ENV:${VERSION}
                         """
+                        
+                        // Tag and push as 'latest' for the environment
+                        sh """
+                            docker tag ${REPOSITORY_PREFIX}/${service}-${ENV}:${VERSION} ${REPOSITORY_PREFIX}/${service}-${ENV}:latest
+                            docker push ${REPOSITORY_PREFIX}/${service}-${ENV}:latest
+                        """
+                        
+                        echo "Pushed ${service} with tags: ${VERSION} and latest"
                     }
                 }
             }
