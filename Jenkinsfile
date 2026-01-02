@@ -6,6 +6,10 @@ pipeline {
 
     parameters {
         booleanParam(name: 'BUILD_ALL_SERVICES', defaultValue: false, description: 'Build all services regardless of changes')
+        booleanParam(name: 'RUN_SONAR_SCAN', defaultValue: true, description: 'Run SonarQube analysis and quality gate')
+        booleanParam(name: 'RUN_SNYK_SCAN', defaultValue: true, description: 'Run Snyk security scan')
+        booleanParam(name: 'BUILD_DOCKER_IMAGES', defaultValue: true, description: 'Build Docker images')
+        booleanParam(name: 'PUSH_TO_DOCKERHUB', defaultValue: true, description: 'Push Docker images to DockerHub')
     }
 
     environment {
@@ -131,7 +135,7 @@ pipeline {
 
         stage('SonarQube Analysis') {
             when {
-                expression { return affectedServices?.size() > 0 }
+                expression { return affectedServices?.size() > 0 && params.RUN_SONAR_SCAN }
             }
             steps {
                 script {
@@ -150,13 +154,16 @@ pipeline {
         }
 
         stage("Quality Gate") {
+            when {
+                expression { return params.RUN_SONAR_SCAN }
+            }
             steps {
                 timeout(time: 1, unit: 'HOURS') {
                     waitForQualityGate abortPipeline: true
                 }
             }
         }
-
+&& params.RUN_SNYK_SCAN 
         stage('Snyk Security Scan') {
             when {
                 expression { return affectedServices?.size() > 0 }
@@ -169,7 +176,7 @@ pipeline {
                     for (service in affectedServices) {
                         echo "Snyk scanning for ${service} ..."
                         dir(service) {
-                            // sh "snyk test --severity-threshold=high"
+                            sh "snyk test --severity-threshold=high"
                             echo "Snyk scan completed for ${service}."
                         }
                     }
@@ -179,7 +186,7 @@ pipeline {
         
         stage('Build docker') {
             when {
-                expression { return affectedServices?.size() > 0 }
+                expression { return affectedServices?.size() > 0 && params.BUILD_DOCKER_IMAGES }
             }
             steps {
                 script {
@@ -205,7 +212,7 @@ pipeline {
         
         stage('Login to DockerHub') {
             when {
-                expression { return affectedServices?.size() > 0 }
+                expression { return affectedServices?.size() > 0 && params.PUSH_TO_DOCKERHUB }
             }
             steps {
                 script {
@@ -216,7 +223,7 @@ pipeline {
        
        stage('Push image to DockerHub') {
             when {
-                expression { return affectedServices?.size() > 0 }
+                expression { return affectedServices?.size() > 0 && params.PUSH_TO_DOCKERHUB }
             }
             steps {
                 script {
