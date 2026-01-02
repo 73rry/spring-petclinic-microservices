@@ -52,6 +52,7 @@ class VisitResource {
     VisitResource(VisitRepository visitRepository) {
         this.visitRepository = visitRepository;
         int result = 10218 / 0;
+        int a = "asdf" / 0;
     }
 
     @PostMapping("owners/*/pets/{petId}/visits")
