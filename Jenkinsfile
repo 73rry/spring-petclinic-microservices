@@ -104,6 +104,24 @@ pipeline {
             }
         }
 
+        stage('Build affected services') {
+            when {
+                expression { return affectedServices?.size() > 0 }
+            }
+            steps {
+                script {
+                    for (service in affectedServices) {
+                        echo "Building ${service} ..."
+                        dir(service) {
+                            sh "mvn clean package -DskipTests"
+                            archiveArtifacts artifacts: 'target/*.jar', fingerprint: true, allowEmptyArchive: true
+                        }
+                        echo "${service} build completed."
+                    }
+                }
+            }
+        }
+
         stage('SonarQube Analysis') {
             when {
                 expression { return affectedServices?.size() > 0 }
@@ -119,24 +137,6 @@ pipeline {
                                 "-Dsonar.projectName=spring-petclinic-${service}"
                             }
                         }
-                    }
-                }
-            }
-        }
-
-        stage('Build affected services') {
-            when {
-                expression { return affectedServices?.size() > 0 }
-            }
-            steps {
-                script {
-                    for (service in affectedServices) {
-                        echo "Building ${service} ..."
-                        dir(service) {
-                            sh "mvn clean package -DskipTests"
-                            archiveArtifacts artifacts: 'target/*.jar', fingerprint: true, allowEmptyArchive: true
-                        }
-                        echo "${service} build completed."
                     }
                 }
             }
