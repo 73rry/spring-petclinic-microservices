@@ -59,4 +59,7 @@ sudo systemctl start jenkins
 
 
 sudo apt install nodejs npm
-npm install snyk -g
+sudo npm install snyk -g
+
+# sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+# docker run -d --name sonarqube -p 9000:9000 sonarqube:lts-community
