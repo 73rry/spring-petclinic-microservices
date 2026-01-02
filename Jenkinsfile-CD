@@ -12,7 +12,7 @@ pipeline {
     environment {
         DOCKER_HUB_CREDENTIALS = credentials('dockerhub-PAT')
         REPOSITORY_PREFIX = "matadora04"
-        API_GATEWAY_PORT = "8080"
+        API_GATEWAY_PORT = "9080"
         TARGET_URL = "http://localhost:${API_GATEWAY_PORT}"
     }
 
