@@ -1,0 +1,228 @@
+def servicesList = ['spring-petclinic-admin-server', 'spring-petclinic-api-gateway', 'spring-petclinic-config-server', 'spring-petclinic-customers-service', 'spring-petclinic-discovery-server', 'spring-petclinic-genai-service', 'spring-petclinic-vets-service', 'spring-petclinic-visits-service']
+
+pipeline {
+    agent any
+
+    parameters {
+        choice(name: 'ENVIRONMENT', choices: ['dev', 'staging', 'production'], description: 'Deployment environment')
+        string(name: 'VERSION', defaultValue: 'latest', description: 'Docker image version/tag to deploy')
+        booleanParam(name: 'RUN_ZAP_SCAN', defaultValue: true, description: 'Run OWASP ZAP security scan after deployment')
+    }
+
+    environment {
+        DOCKER_HUB_CREDENTIALS = credentials('dockerhub-PAT')
+        REPOSITORY_PREFIX = "matadora04"
+        API_GATEWAY_PORT = "8080"
+        TARGET_URL = "http://localhost:${API_GATEWAY_PORT}"
+    }
+
+    stages {
+        stage('Pull Docker Images') {
+            steps {
+                script {
+                    echo "Pulling Docker images for environment: ${params.ENVIRONMENT}"
+                    sh "echo ${DOCKER_HUB_CREDENTIALS_PSW} | docker login -u ${DOCKER_HUB_CREDENTIALS_USR} --password-stdin"
+                    
+                    for (service in servicesList) {
+                        def image = "${REPOSITORY_PREFIX}/${service}-${params.ENVIRONMENT}:${params.VERSION}"
+                        echo "Pulling ${image}..."
+                        sh "docker pull ${image}"
+                    }
+                }
+            }
+        }
+
+        stage('Deploy Services') {
+            steps {
+                script {
+                    echo "Deploying services using docker-compose..."
+                    
+                    // Stop and remove existing containers
+                    sh """
+                        docker-compose down || true
+                    """
+                    
+                    // Deploy using docker-compose
+                    sh """
+                        export DOCKER_IMAGE_TAG=${params.VERSION}
+                        export ENV=${params.ENVIRONMENT}
+                        docker-compose up -d
+                    """
+                    
+                    echo "Services deployed successfully"
+                }
+            }
+        }
+
+        stage('Wait for Services to be Ready') {
+            steps {
+                script {
+                    echo "Waiting for services to be healthy..."
+                    
+                    // Wait for API Gateway to be ready
+                    timeout(time: 5, unit: 'MINUTES') {
+                        waitUntil {
+                            script {
+                                def response = sh(
+                                    script: "curl -s -o /dev/null -w '%{http_code}' ${TARGET_URL}/actuator/health || echo '000'",
+                                    returnStdout: true
+                                ).trim()
+                                
+                                echo "Health check response: ${response}"
+                                return response == '200'
+                            }
+                        }
+                    }
+                    
+                    echo "Services are ready!"
+                    
+                    // Additional wait to ensure all services are fully initialized
+                    sleep(time: 30, unit: 'SECONDS')
+                }
+            }
+        }
+
+        stage('OWASP ZAP Security Scan') {
+            when {
+                expression { return params.RUN_ZAP_SCAN }
+            }
+            steps {
+                script {
+                    echo "Running OWASP ZAP Baseline Scan on ${TARGET_URL}..."
+                    
+                    // Create directory for reports
+                    sh "mkdir -p zap-reports"
+                    
+                    // Run ZAP Baseline Scan
+                    def zapExitCode = sh(
+                        script: """
+                            docker run --rm \
+                                -v \$(pwd)/zap-reports:/zap/wrk/:rw \
+                                --network host \
+                                ghcr.io/zaproxy/zaproxy:stable \
+                                zap-baseline.py \
+                                -t ${TARGET_URL} \
+                                -r zap-baseline-report.html \
+                                -J zap-baseline-report.json \
+                                -I
+                        """,
+                        returnStatus: true
+                    )
+                    
+                    echo "ZAP scan completed with exit code: ${zapExitCode}"
+                    
+                    // Archive reports
+                    archiveArtifacts artifacts: 'zap-reports/*.html, zap-reports/*.json', allowEmptyArchive: true
+                    
+                    // Parse JSON report for vulnerabilities
+                    if (fileExists('zap-reports/zap-baseline-report.json')) {
+                        def zapReport = readJSON file: 'zap-reports/zap-baseline-report.json'
+                        def highSeverityIssues = 0
+                        def mediumSeverityIssues = 0
+                        
+                        if (zapReport.site) {
+                            zapReport.site.each { site ->
+                                site.alerts.each { alert ->
+                                    if (alert.riskcode == '3') {  // High
+                                        highSeverityIssues++
+                                        echo "⚠️  HIGH SEVERITY: ${alert.name}"
+                                        echo "    Description: ${alert.desc}"
+                                        echo "    Solution: ${alert.solution}"
+                                    } else if (alert.riskcode == '2') {  // Medium
+                                        mediumSeverityIssues++
+                                        echo "⚡ MEDIUM SEVERITY: ${alert.name}"
+                                    }
+                                }
+                            }
+                        }
+                        
+                        echo "================================"
+                        echo "ZAP Scan Summary:"
+                        echo "  High Severity Issues: ${highSeverityIssues}"
+                        echo "  Medium Severity Issues: ${mediumSeverityIssues}"
+                        echo "================================"
+                        
+                        // Fail if high severity issues found
+                        if (highSeverityIssues > 0) {
+                            error("❌ ZAP scan found ${highSeverityIssues} HIGH severity vulnerabilities. Deployment blocked!")
+                        } else if (mediumSeverityIssues > 0) {
+                            echo "⚠️  Warning: ${mediumSeverityIssues} MEDIUM severity issues found. Please review."
+                        } else {
+                            echo "✅ No high severity vulnerabilities found!"
+                        }
+                    } else {
+                        echo "Warning: ZAP report file not found"
+                    }
+                }
+            }
+        }
+
+        stage('Deployment Verification') {
+            steps {
+                script {
+                    echo "Verifying deployment..."
+                    
+                    // Run basic smoke tests
+                    sh """
+                        echo "Testing API Gateway..."
+                        curl -f ${TARGET_URL}/actuator/health
+                        
+                        echo "Testing API endpoints..."
+                        curl -f ${TARGET_URL}/api/customer/owners || true
+                    """
+                    
+                    echo "✅ Deployment verification completed successfully"
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'CD Pipeline completed!'
+            
+            // Publish ZAP HTML report
+            publishHTML([
+                allowMissing: true,
+                alwaysLinkToLastBuild: true,
+                keepAll: true,
+                reportDir: 'zap-reports',
+                reportFiles: 'zap-baseline-report.html',
+                reportName: 'ZAP Security Scan Report',
+                reportTitles: 'OWASP ZAP Security Report'
+            ])
+            
+            sh "docker logout"
+        }
+        
+        success {
+            echo '✅ Deployment and security scan completed successfully!'
+            // Optional: Send notification
+            // emailext subject: "Deployment Success - ${params.ENVIRONMENT}",
+            //          body: "Application deployed successfully to ${params.ENVIRONMENT}",
+            //          to: "team@example.com"
+        }
+        
+        failure {
+            echo '❌ Deployment or security scan failed!'
+            
+            // Rollback on failure (optional)
+            script {
+                if (params.ENVIRONMENT != 'production') {
+                    echo "Rolling back deployment..."
+                    sh "docker-compose down || true"
+                }
+            }
+            
+            // Optional: Send notification
+            // emailext subject: "Deployment Failed - ${params.ENVIRONMENT}",
+            //          body: "Deployment failed. Check Jenkins console for details.",
+            //          to: "team@example.com"
+        }
+        
+        cleanup {
+            // Clean up workspace
+            sh "rm -rf zap-reports"
+        }
+    }
+}
