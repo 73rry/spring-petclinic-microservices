@@ -163,10 +163,10 @@ pipeline {
                 }
             }
         }
-&& params.RUN_SNYK_SCAN 
+
         stage('Snyk Security Scan') {
             when {
-                expression { return affectedServices?.size() > 0 }
+                expression { return affectedServices?.size() > 0 && params.RUN_SNYK_SCAN }
             }
             environment {
                 SNYK_TOKEN = credentials('snyk-token')
