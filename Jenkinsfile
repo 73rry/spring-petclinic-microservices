@@ -119,27 +119,6 @@ pipeline {
             }
         }
 
-        stage('Snyk Security Scan') {
-            when {
-                expression { return affectedServices?.size() > 0 }
-            }
-            environment {
-                SNYK_TOKEN = credentials('snyk-token')
-            }
-            steps {
-                script {
-                    for (service in affectedServices) {
-                        echo "Snyk scanning for ${service} ..."
-                        dir(service) {
-                            // --severity-threshold=high nghĩa là nếu có lỗi bảo mật mức Cao thì mới báo fail
-                            // Nếu bạn muốn chỉ cảnh báo mà không làm dừng pipeline, bỏ chữ '--severity-threshold=high'
-                            sh "snyk test --severity-threshold=high"
-                        }
-                    }
-                }
-            }
-        }
-
         stage('SonarQube Analysis') {
             when {
                 expression { return affectedServices?.size() > 0 }
@@ -164,6 +143,27 @@ pipeline {
             steps {
                 timeout(time: 1, unit: 'HOURS') {
                     waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        stage('Snyk Security Scan') {
+            when {
+                expression { return affectedServices?.size() > 0 }
+            }
+            environment {
+                SNYK_TOKEN = credentials('snyk-token')
+            }
+            steps {
+                script {
+                    for (service in affectedServices) {
+                        echo "Snyk scanning for ${service} ..."
+                        dir(service) {
+                            // --severity-threshold=high nghĩa là nếu có lỗi bảo mật mức Cao thì mới báo fail
+                            // Nếu bạn muốn chỉ cảnh báo mà không làm dừng pipeline, bỏ chữ '--severity-threshold=high'
+                            sh "snyk test --severity-threshold=high"
+                        }
+                    }
                 }
             }
         }

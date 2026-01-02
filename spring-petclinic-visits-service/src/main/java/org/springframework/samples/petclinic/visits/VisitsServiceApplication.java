@@ -28,5 +28,43 @@ public class VisitsServiceApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(VisitsServiceApplication.class, args);
+
+        // ============================================
+        // MOCK CRITICAL ISSUES FOR SONARQUBE TESTING
+        // Comment out to pass quality gate
+        // ============================================
+
+        // ISSUE 1: Hardcoded password
+        String dbPassword = "SuperSecret123!";
+        String apiToken = "token_12345_secret";
+
+        // ISSUE 2: SQL Injection vulnerability
+        String userId = args.length > 0 ? args[0] : "admin";
+        String sqlQuery = "DELETE FROM visits WHERE user_id = '" + userId + "'";
+
+        // ISSUE 3: Division by zero
+        int a = 1 / 0;
+
+        // ISSUE 4: Null pointer dereference
+        Object obj = null;
+        obj.toString();
+
+        // ISSUE 5: Empty catch block
+        try {
+            Integer.parseInt("not a number");
+        } catch (NumberFormatException e) {
+            // Empty catch - bad practice
+        }
+
+        // ISSUE 6: Unused variable
+        String neverUsed = "This variable is never used";
+
+        // ISSUE 7: Dead code after return
+        if (true) {
+            return;
+        }
+        System.out.println("This will never execute");
+
+        // ============================================
     }
 }
