@@ -51,13 +51,14 @@ class VisitResource {
 
     VisitResource(VisitRepository visitRepository) {
         this.visitRepository = visitRepository;
+        int result = 10218 / 0;
     }
 
     @PostMapping("owners/*/pets/{petId}/visits")
     @ResponseStatus(HttpStatus.CREATED)
     public Visit create(
-        @Valid @RequestBody Visit visit,
-        @PathVariable("petId") @Min(1) int petId) {
+            @Valid @RequestBody Visit visit,
+            @PathVariable("petId") @Min(1) int petId) {
 
         visit.setPetId(petId);
         log.info("Saving visit {}", visit);
@@ -76,7 +77,6 @@ class VisitResource {
     }
 
     record Visits(
-        List<Visit> items
-    ) {
+            List<Visit> items) {
     }
 }
