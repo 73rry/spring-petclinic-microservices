@@ -214,16 +214,19 @@ pipeline {
         always {
             echo 'CD Pipeline completed!'
             
-            // Publish ZAP HTML report
-            publishHTML([
-                allowMissing: true,
-                alwaysLinkToLastBuild: true,
-                keepAll: true,
-                reportDir: 'zap-reports',
-                reportFiles: 'zap-baseline-report.html',
-                reportName: 'ZAP Security Scan Report',
-                reportTitles: 'OWASP ZAP Security Report'
-            ])
+            // Archive ZAP reports (publishHTML requires plugin installation)
+            archiveArtifacts artifacts: 'zap-reports/*.html, zap-reports/*.json', allowEmptyArchive: true, fingerprint: true
+            
+            // Uncomment below if HTML Publisher plugin is installed
+            // publishHTML([
+            //     allowMissing: true,
+            //     alwaysLinkToLastBuild: true,
+            //     keepAll: true,
+            //     reportDir: 'zap-reports',
+            //     reportFiles: 'zap-baseline-report.html',
+            //     reportName: 'ZAP Security Scan Report',
+            //     reportTitles: 'OWASP ZAP Security Report'
+            // ])
             
             sh "docker logout"
         }
