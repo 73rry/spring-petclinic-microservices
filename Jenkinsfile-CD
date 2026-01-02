@@ -17,6 +17,15 @@ pipeline {
     }
 
     stages {
+        stage('Checkout Repository') {
+            steps {
+                script {
+                    echo "Checking out repository..."
+                    checkout scm
+                }
+            }
+        }
+
         stage('Pull Docker Images') {
             steps {
                 script {
@@ -32,6 +41,32 @@ pipeline {
             }
         }
 
+        stage('Update Docker Compose') {
+            steps {
+                script {
+                    echo "Updating docker-compose.yml with custom images..."
+                    
+                    // Create a copy and update image references
+                    sh """
+                        cp docker-compose.yml docker-compose-deploy.yml
+                        
+                        # Replace image names with custom images
+                        sed -i 's|image: springcommunity/spring-petclinic-config-server|image: ${REPOSITORY_PREFIX}/spring-petclinic-config-server-${params.ENVIRONMENT}:${params.VERSION}|g' docker-compose-deploy.yml
+                        sed -i 's|image: springcommunity/spring-petclinic-discovery-server|image: ${REPOSITORY_PREFIX}/spring-petclinic-discovery-server-${params.ENVIRONMENT}:${params.VERSION}|g' docker-compose-deploy.yml
+                        sed -i 's|image: springcommunity/spring-petclinic-customers-service|image: ${REPOSITORY_PREFIX}/spring-petclinic-customers-service-${params.ENVIRONMENT}:${params.VERSION}|g' docker-compose-deploy.yml
+                        sed -i 's|image: springcommunity/spring-petclinic-visits-service|image: ${REPOSITORY_PREFIX}/spring-petclinic-visits-service-${params.ENVIRONMENT}:${params.VERSION}|g' docker-compose-deploy.yml
+                        sed -i 's|image: springcommunity/spring-petclinic-vets-service|image: ${REPOSITORY_PREFIX}/spring-petclinic-vets-service-${params.ENVIRONMENT}:${params.VERSION}|g' docker-compose-deploy.yml
+                        sed -i 's|image: springcommunity/spring-petclinic-genai-service|image: ${REPOSITORY_PREFIX}/spring-petclinic-genai-service-${params.ENVIRONMENT}:${params.VERSION}|g' docker-compose-deploy.yml
+                        sed -i 's|image: springcommunity/spring-petclinic-api-gateway|image: ${REPOSITORY_PREFIX}/spring-petclinic-api-gateway-${params.ENVIRONMENT}:${params.VERSION}|g' docker-compose-deploy.yml
+                        sed -i 's|image: springcommunity/spring-petclinic-admin-server|image: ${REPOSITORY_PREFIX}/spring-petclinic-admin-server-${params.ENVIRONMENT}:${params.VERSION}|g' docker-compose-deploy.yml
+                        
+                        echo "Updated docker-compose-deploy.yml:"
+                        cat docker-compose-deploy.yml
+                    """
+                }
+            }
+        }
+
         stage('Deploy Services') {
             steps {
                 script {
@@ -39,14 +74,12 @@ pipeline {
                     
                     // Stop and remove existing containers
                     sh """
-                        docker compose down || true
+                        docker compose -f docker-compose-deploy.yml down || true
                     """
                     
-                    // Deploy using docker compose
+                    // Deploy using custom docker compose file
                     sh """
-                        export DOCKER_IMAGE_TAG=${params.VERSION}
-                        export ENV=${params.ENVIRONMENT}
-                        docker compose up -d
+                        docker compose -f docker-compose-deploy.yml up -d
                     """
                     
                     echo "Services deployed successfully"
@@ -210,7 +243,7 @@ pipeline {
             script {
                 if (params.ENVIRONMENT != 'production') {
                     echo "Rolling back deployment..."
-                    sh "docker compose down || true"
+                    sh "docker compose -f docker-compose-deploy.yml down || true"
                 }
             }
             
