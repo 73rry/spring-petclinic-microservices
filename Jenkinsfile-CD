@@ -35,18 +35,18 @@ pipeline {
         stage('Deploy Services') {
             steps {
                 script {
-                    echo "Deploying services using docker-compose..."
+                    echo "Deploying services using docker compose..."
                     
                     // Stop and remove existing containers
                     sh """
-                        docker-compose down || true
+                        docker compose down || true
                     """
                     
-                    // Deploy using docker-compose
+                    // Deploy using docker compose
                     sh """
                         export DOCKER_IMAGE_TAG=${params.VERSION}
                         export ENV=${params.ENVIRONMENT}
-                        docker-compose up -d
+                        docker compose up -d
                     """
                     
                     echo "Services deployed successfully"
@@ -210,7 +210,7 @@ pipeline {
             script {
                 if (params.ENVIRONMENT != 'production') {
                     echo "Rolling back deployment..."
-                    sh "docker-compose down || true"
+                    sh "docker compose down || true"
                 }
             }
             
