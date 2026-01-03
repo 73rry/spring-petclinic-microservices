@@ -1,0 +1,102 @@
+# Block traffic from vets-service and visits-service and genai-service to customer-service
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: petclinic-deny-to-customer-service
+  labels:
+    {{- include "petclinic.labels" . | nindent 4 }}
+    app: {{ include "petclinic.name" . }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "petclinic.name" . }}
+      service: customers-service
+  action: DENY
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/{{ .Release.Namespace }}/sa/{{ include "petclinic.fullname" (dict "name" "vets-service-sa" "context" .) }}"
+              - "cluster.local/ns/{{ .Release.Namespace }}/sa/{{ include "petclinic.fullname" (dict "name" "visits-service-sa" "context" .) }}"
+              - "cluster.local/ns/{{ .Release.Namespace }}/sa/{{ include "petclinic.fullname" (dict "name" "genai-service-sa" "context" .) }}"
+      to:
+        - operation:
+            methods: ["*"]
+
+---
+# Block traffic from genai-service and visits-service and customer-service to vets-service
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: petclinic-deny-to-vets-service
+  labels:
+    {{- include "petclinic.labels" . | nindent 4 }}
+    app: {{ include "petclinic.name" . }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "petclinic.name" . }}
+      service: vets-service
+  action: DENY
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/{{ .Release.Namespace }}/sa/{{ include "petclinic.fullname" (dict "name" "genai-service-sa" "context" .) }}"
+              - "cluster.local/ns/{{ .Release.Namespace }}/sa/{{ include "petclinic.fullname" (dict "name" "visits-service-sa" "context" .) }}"
+              - "cluster.local/ns/{{ .Release.Namespace }}/sa/{{ include "petclinic.fullname" (dict "name" "customers-service-sa" "context" .) }}"
+      to:
+        - operation:
+            methods: ["*"]
+
+---
+# Block traffic from customer-service and vets-service and genai-service to visits-service
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: petclinic-deny-to-visits-service
+  labels:
+    {{- include "petclinic.labels" . | nindent 4 }}
+    app: {{ include "petclinic.name" . }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "petclinic.name" . }}
+      service: visits-service
+  action: DENY
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/{{ .Release.Namespace }}/sa/{{ include "petclinic.fullname" (dict "name" "customers-service-sa" "context" .) }}"
+              - "cluster.local/ns/{{ .Release.Namespace }}/sa/{{ include "petclinic.fullname" (dict "name" "vets-service-sa" "context" .) }}"
+              - "cluster.local/ns/{{ .Release.Namespace }}/sa/{{ include "petclinic.fullname" (dict "name" "genai-service-sa" "context" .) }}"
+      to:
+        - operation:
+            methods: ["*"]
+
+---
+# Block traffic from customer-service and vets-service and visits-service to genai-service
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: petclinic-deny-to-genai-service
+  labels:
+    {{- include "petclinic.labels" . | nindent 4 }}
+    app: {{ include "petclinic.name" . }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "petclinic.name" . }}
+      service: genai-service
+  action: DENY
+  rules:
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/{{ .Release.Namespace }}/sa/{{ include "petclinic.fullname" (dict "name" "customers-service-sa" "context" .) }}"
+              - "cluster.local/ns/{{ .Release.Namespace }}/sa/{{ include "petclinic.fullname" (dict "name" "vets-service-sa" "context" .) }}"
+              - "cluster.local/ns/{{ .Release.Namespace }}/sa/{{ include "petclinic.fullname" (dict "name" "visits-service-sa" "context" .) }}"
+      to:
+        - operation:
+            methods: ["*"] 

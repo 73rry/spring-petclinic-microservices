@@ -22,6 +22,7 @@ spec:
         app: {{ include "petclinic.name" $ }}
         service: {{ $name }}
     spec:
+      serviceAccountName: {{ include "petclinic.fullname" (dict "name" (printf "%s-sa" $name) "context" $) }}
       containers:
         - name: {{ $name }}
           {{- /* If the image already contains a registry/repo (e.g., openzipkin/zipkin), don't prepend global prefix */}}
