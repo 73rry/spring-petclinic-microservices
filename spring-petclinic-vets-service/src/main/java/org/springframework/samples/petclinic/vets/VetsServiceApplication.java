@@ -21,6 +21,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.samples.petclinic.vets.system.VetsProperties;
 
+
 /**
  * @author Maciej Szarlinski
  */
@@ -31,6 +32,5 @@ public class VetsServiceApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(VetsServiceApplication.class, args);
-
 	}
 }
