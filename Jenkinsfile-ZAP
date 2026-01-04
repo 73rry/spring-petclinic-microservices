@@ -33,7 +33,7 @@ pipeline {
                     
                     def zapStatus = sh(returnStatus: true, script: """
                         docker run --rm \
-                            --user \$(id -u):\$(id -g)
+                            --user \$(id -u):\$(id -g) \
                             -v ${ZAP_REPORT_DIR}:/zap/wrk:rw \
                             --network host \
                             ghcr.io/zaproxy/zaproxy:stable \
