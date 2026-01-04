@@ -35,6 +35,7 @@ pipeline {
                         docker run --rm \
                             --user \$(id -u):\$(id -g) \
                             -v ${ZAP_REPORT_DIR}:/zap/wrk:rw \
+                            -e HOME=/zap/wrk \
                             --network host \
                             ghcr.io/zaproxy/zaproxy:stable \
                             ${scanScript} \
