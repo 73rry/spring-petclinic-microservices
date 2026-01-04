@@ -33,6 +33,7 @@ pipeline {
                     
                     def zapStatus = sh(returnStatus: true, script: """
                         docker run --rm \
+                            --user root \
                             -v ${ZAP_REPORT_DIR}:/zap/wrk:rw \
                             --network host \
                             ghcr.io/zaproxy/zaproxy:stable \
@@ -43,6 +44,8 @@ pipeline {
                             -w ${reportPrefix}.md \
                             -I
                     """)
+                    
+                    sh "chmod -R 755 ${ZAP_REPORT_DIR}"
                     
                     if (zapStatus > 2) {
                         error "ZAP scan failed with exit code ${zapStatus}"
