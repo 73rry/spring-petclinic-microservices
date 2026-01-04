@@ -1,0 +1,98 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'TARGET_URL', defaultValue: 'https://spring-petclinic.antoanso.dev', description: 'Target URL to scan')
+        choice(name: 'SCAN_TYPE', choices: ['baseline', 'full', 'api'], description: 'ZAP scan type')
+        booleanParam(name: 'FAIL_ON_HIGH', defaultValue: false, description: 'Fail build on high severity findings')
+    }
+
+    environment {
+        ZAP_REPORT_DIR = "${WORKSPACE}/zap-reports"
+        TIMESTAMP = sh(script: "date +%Y%m%d-%H%M%S", returnStdout: true).trim()
+    }
+
+    stages {
+        stage('Prepare') {
+            steps {
+                echo "ZAP Security Scan - Target: ${params.TARGET_URL} - Type: ${params.SCAN_TYPE}"
+                sh "mkdir -p ${ZAP_REPORT_DIR} && chmod 777 ${ZAP_REPORT_DIR}"
+            }
+        }
+
+        stage('Run ZAP Scan') {
+            steps {
+                script {
+                    def scanScript = [
+                        'baseline': 'zap-baseline.py',
+                        'full': 'zap-full-scan.py',
+                        'api': 'zap-api-scan.py'
+                    ][params.SCAN_TYPE]
+                    
+                    def reportPrefix = "zap-${params.SCAN_TYPE}-report-${TIMESTAMP}"
+                    
+                    def zapStatus = sh(returnStatus: true, script: """
+                        docker run --rm \
+                            --user root \
+                            -v ${ZAP_REPORT_DIR}:/zap/wrk:rw \
+                            --network host \
+                            ghcr.io/zaproxy/zaproxy:stable \
+                            ${scanScript} \
+                            -t ${params.TARGET_URL} \
+                            -r ${reportPrefix}.html \
+                            -J ${reportPrefix}.json \
+                            -w ${reportPrefix}.md \
+                            -I
+                    """)
+                    
+                    if (zapStatus > 2) {
+                        error "ZAP scan failed with exit code ${zapStatus}"
+                    }
+                }
+            }
+        }
+
+        stage('Analyze Results') {
+            steps {
+                script {
+                    def jsonFile = sh(
+                        script: "ls -t ${ZAP_REPORT_DIR}/*.json 2>/dev/null | head -1 || echo ''",
+                        returnStdout: true
+                    ).trim()
+                    
+                    if (jsonFile && fileExists(jsonFile)) {
+                        def zapReport = readJSON file: jsonFile
+                        def highAlerts = 0
+                        
+                        zapReport.site?.each { site ->
+                            site.alerts?.each { alert ->
+                                if (alert.riskcode == '3') highAlerts++
+                            }
+                        }
+                        
+                        echo "High Risk Alerts: ${highAlerts}"
+                        
+                        if (params.FAIL_ON_HIGH && highAlerts > 0) {
+                            error("Found ${highAlerts} high severity vulnerabilities!")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'zap-reports/*', allowEmptyArchive: true
+            
+            publishHTML([
+                allowMissing: true,
+                alwaysLinkToLastBuild: true,
+                keepAll: true,
+                reportDir: 'zap-reports',
+                reportFiles: 'zap-*-report-*.html',
+                reportName: 'ZAP Security Report'
+            ])
+        }
+    }
+}
