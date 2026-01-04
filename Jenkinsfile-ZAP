@@ -33,28 +33,40 @@ pipeline {
                 script {
                     echo "Running ZAP Baseline Scan..."
                     
+                    // Test connectivity first
+                    echo "Testing connectivity to ${params.TARGET_URL}..."
+                    sh "curl -I ${params.TARGET_URL} || echo 'Warning: Target may not be accessible'"
+                    
                     // Get current user/group IDs to match permissions
                     def userId = sh(script: 'id -u', returnStdout: true).trim()
                     def groupId = sh(script: 'id -g', returnStdout: true).trim()
                     echo "Running as user:group ${userId}:${groupId}"
                     
                     // Run ZAP with matching user permissions
-                    sh """
+                    def zapStatus = sh(returnStatus: true, script: """
                         docker run --rm \
                             -v ${ZAP_REPORT_DIR}:/zap/wrk:rw \
                             -u ${userId}:${groupId} \
                             -e HOME=/zap/wrk \
+                            --network host \
                             -t ghcr.io/zaproxy/zaproxy:stable \
                             zap-baseline.py \
                             -t ${params.TARGET_URL} \
+                            -g gen.conf \
                             -r zap-baseline-report-${TIMESTAMP}.html \
                             -J zap-baseline-report-${TIMESTAMP}.json \
-                            -w zap-baseline-report-${TIMESTAMP}.md \
-                            -I || true
-                    """
+                            -w zap-baseline-report-${TIMESTAMP}.md
+                    """)
+                    
+                    echo "ZAP scan exit code: ${zapStatus}"
                     
                     // Verify files were created
                     sh "ls -lh ${ZAP_REPORT_DIR}/ || echo 'No files created'"
+                    
+                    // Don't fail build on warnings, only on errors
+                    if (zapStatus > 2) {
+                        error "ZAP scan failed with exit code ${zapStatus}"
+                    }
                 }
             }
         }
@@ -67,25 +79,34 @@ pipeline {
                 script {
                     echo "Running ZAP Full Scan (this may take a while)..."
                     
+                    echo "Testing connectivity to ${params.TARGET_URL}..."
+                    sh "curl -I ${params.TARGET_URL} || echo 'Warning: Target may not be accessible'"
+                    
                     def userId = sh(script: 'id -u', returnStdout: true).trim()
                     def groupId = sh(script: 'id -g', returnStdout: true).trim()
                     echo "Running as user:group ${userId}:${groupId}"
                     
-                    sh """
+                    def zapStatus = sh(returnStatus: true, script: """
                         docker run --rm \
                             -v ${ZAP_REPORT_DIR}:/zap/wrk:rw \
                             -u ${userId}:${groupId} \
                             -e HOME=/zap/wrk \
+                            --network host \
                             -t ghcr.io/zaproxy/zaproxy:stable \
                             zap-full-scan.py \
                             -t ${params.TARGET_URL} \
+                            -g gen.conf \
                             -r zap-full-report-${TIMESTAMP}.html \
                             -J zap-full-report-${TIMESTAMP}.json \
-                            -w zap-full-report-${TIMESTAMP}.md \
-                            -I || true
-                    """
+                            -w zap-full-report-${TIMESTAMP}.md
+                    """)
                     
+                    echo "ZAP scan exit code: ${zapStatus}"
                     sh "ls -lh ${ZAP_REPORT_DIR}/ || echo 'No files created'"
+                    
+                    if (zapStatus > 2) {
+                        error "ZAP scan failed with exit code ${zapStatus}"
+                    }
                 }
             }
         }
