@@ -7,7 +7,7 @@ pipeline {
     environment {
         GITHUB_TOKEN = credentials('github-PAT')
         DOCKER_HUB_CREDENTIALS = credentials('dockerhub-PAT')
-        REPOSITORY_PREFIX = "matadora04"
+        REPOSITORY_PREFIX = "terrytantan"
         VERSION = "${env.GIT_COMMIT}"
         ENV = "dev"
     }
