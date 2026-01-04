@@ -32,9 +32,17 @@ pipeline {
             steps {
                 script {
                     echo "Running ZAP Baseline Scan..."
+                    
+                    // Get current user/group IDs to match permissions
+                    def userId = sh(script: 'id -u', returnStdout: true).trim()
+                    def groupId = sh(script: 'id -g', returnStdout: true).trim()
+                    echo "Running as user:group ${userId}:${groupId}"
+                    
+                    // Run ZAP with matching user permissions
                     sh """
                         docker run --rm \
                             -v ${ZAP_REPORT_DIR}:/zap/wrk:rw \
+                            -u ${userId}:${groupId} \
                             -t ghcr.io/zaproxy/zaproxy:stable \
                             zap-baseline.py \
                             -t ${params.TARGET_URL} \
@@ -43,6 +51,9 @@ pipeline {
                             -w zap-baseline-report-${TIMESTAMP}.md \
                             -I || true
                     """
+                    
+                    // Verify files were created
+                    sh "ls -lh ${ZAP_REPORT_DIR}/ || echo 'No files created'"
                 }
             }
         }
@@ -54,9 +65,15 @@ pipeline {
             steps {
                 script {
                     echo "Running ZAP Full Scan (this may take a while)..."
+                    
+                    def userId = sh(script: 'id -u', returnStdout: true).trim()
+                    def groupId = sh(script: 'id -g', returnStdout: true).trim()
+                    echo "Running as user:group ${userId}:${groupId}"
+                    
                     sh """
                         docker run --rm \
                             -v ${ZAP_REPORT_DIR}:/zap/wrk:rw \
+                            -u ${userId}:${groupId} \
                             -t ghcr.io/zaproxy/zaproxy:stable \
                             zap-full-scan.py \
                             -t ${params.TARGET_URL} \
@@ -65,6 +82,8 @@ pipeline {
                             -w zap-full-report-${TIMESTAMP}.md \
                             -I || true
                     """
+                    
+                    sh "ls -lh ${ZAP_REPORT_DIR}/ || echo 'No files created'"
                 }
             }
         }
@@ -76,9 +95,15 @@ pipeline {
             steps {
                 script {
                     echo "Running ZAP API Scan..."
+                    
+                    def userId = sh(script: 'id -u', returnStdout: true).trim()
+                    def groupId = sh(script: 'id -g', returnStdout: true).trim()
+                    echo "Running as user:group ${userId}:${groupId}"
+                    
                     sh """
                         docker run --rm \
                             -v ${ZAP_REPORT_DIR}:/zap/wrk:rw \
+                            -u ${userId}:${groupId} \
                             -t ghcr.io/zaproxy/zaproxy:stable \
                             zap-api-scan.py \
                             -t ${params.TARGET_URL} \
@@ -88,6 +113,8 @@ pipeline {
                             -w zap-api-report-${TIMESTAMP}.md \
                             -I || true
                     """
+                    
+                    sh "ls -lh ${ZAP_REPORT_DIR}/ || echo 'No files created'"
                 }
             }
         }
@@ -144,18 +171,30 @@ pipeline {
 
     post {
         always {
-            echo 'Archiving ZAP reports...'
-            archiveArtifacts artifacts: 'zap-reports/*', allowEmptyArchive: true
-            
-            publishHTML([
-                allowMissing: false,
-                alwaysLinkToLastBuild: true,
-                keepAll: true,
-                reportDir: 'zap-reports',
-                reportFiles: "zap-*-report-${TIMESTAMP}.html",
-                reportName: 'ZAP Security Report',
-                reportTitles: 'OWASP ZAP Security Scan'
-            ])
+            script {
+                echo 'Archiving ZAP reports...'
+                
+                // List available reports
+                sh 'ls -lh ${ZAP_REPORT_DIR}/ || echo "No reports found"'
+                
+                // Archive artifacts
+                archiveArtifacts artifacts: 'zap-reports/*', allowEmptyArchive: true
+                
+                // Try to publish HTML report if plugin is available
+                try {
+                    publishHTML([
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'zap-reports',
+                        reportFiles: 'zap-*-report-*.html',
+                        reportName: 'ZAP Security Report',
+                        reportTitles: 'OWASP ZAP Security Scan'
+                    ])
+                } catch (Exception e) {
+                    echo "HTML Publisher plugin not available. Reports are archived as artifacts."
+                }
+            }
         }
         success {
             echo 'ZAP security scan completed successfully!'
