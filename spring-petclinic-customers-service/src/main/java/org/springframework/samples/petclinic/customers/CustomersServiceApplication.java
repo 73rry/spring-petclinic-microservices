@@ -35,26 +35,24 @@ public class CustomersServiceApplication {
 		// ============================================
 
 		// CRITICAL ISSUE 1: Hardcoded credentials (Security Hotspot - Critical)
-		// String password = "admin123"; // SonarQube will flag this as hardcoded
-		// credential
-		// String dbPassword = "P@ssw0rd123!"; // Another hardcoded credential
-		// String bank_api = "api_key_ABCD1234"; // Hardcoded
+		String password = "admin123"; // SonarQube will flag this as hardcoded credential
+		String dbPassword = "P@ssw0rd123!"; // Another hardcoded credential
+		String bank_api = "api_key_ABCD1234"; // Hardcoded
 
-		// // CRITICAL ISSUE 2: SQL Injection vulnerability pattern
-		// String username = args.length > 0 ? args[0] : "guest";
-		// String query = "SELECT * FROM users WHERE username = '" + username + "'"; //
-		// SQL Injection risk
+		// CRITICAL ISSUE 2: SQL Injection vulnerability pattern
+		String username = args.length > 0 ? args[0] : "guest";
+		String query = "SELECT * FROM users WHERE username = '" + username + "'"; // SQL Injection risk
 
-		// // CRITICAL ISSUE 3: Empty catch block (Code Smell - Critical)
-		// try {
-		// int result = 10 / 0;
-		// } catch (Exception e) {
-		// // Empty catch block - SonarQube critical issue
-		// }
+		// CRITICAL ISSUE 3: Empty catch block (Code Smell - Critical)
+		try {
+			int result = 10 / 0;
+		} catch (Exception e) {
+			// Empty catch block - SonarQube critical issue
+		}
 
-		// // CRITICAL ISSUE 4: Null pointer dereference
-		// String nullString = null;
-		// int length = nullString.length(); // Guaranteed NullPointerException
+		// CRITICAL ISSUE 4: Null pointer dereference
+		String nullString = null;
+		int length = nullString.length(); // Guaranteed NullPointerException
 
 		// To pass quality gate: Comment out all the code above from "MOCK CRITICAL
 		// ISSUES" to here
