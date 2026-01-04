@@ -104,26 +104,6 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            when {
-                expression { return affectedServices?.size() > 0 }
-            }
-            steps {
-                script {
-                    for (service in affectedServices) {
-                        // Sử dụng block 'withSonarQubeEnv' để Jenkins tự động nạp Token và URL
-                        withSonarQubeEnv('sonarqube') { 
-                            dir(service) {
-                                sh "mvn sonar:sonar " +
-                                "-Dsonar.projectKey=spring-petclinic-${service} " +
-                                "-Dsonar.projectName=spring-petclinic-${service}"
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
         stage('Build affected services') {
             when {
                 expression { return affectedServices?.size() > 0 }
