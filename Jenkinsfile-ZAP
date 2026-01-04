@@ -45,8 +45,6 @@ pipeline {
                             -I
                     """)
                     
-                    sh "chmod -R 755 ${ZAP_REPORT_DIR}"
-                    
                     if (zapStatus > 2) {
                         error "ZAP scan failed with exit code ${zapStatus}"
                     }
