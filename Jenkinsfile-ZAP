@@ -32,7 +32,7 @@ pipeline {
                     def reportPrefix = "zap-${params.SCAN_TYPE}-report-${TIMESTAMP}"
                     
                     def zapStatus = sh(returnStatus: true, script: """
-                        docker run --rm \
+                        docker run --rm -u root \
                             -v ${ZAP_REPORT_DIR}:/zap/wrk:rw \
                             --network host \
                             ghcr.io/zaproxy/zaproxy:stable \
